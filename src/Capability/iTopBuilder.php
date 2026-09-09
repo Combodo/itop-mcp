@@ -57,10 +57,11 @@ use Symfony\Contracts\Cache\CacheInterface as sfCacheInterface;
 class iTopBuilder
 {
     private Builder $builder;
-    
-    public function __construct(private iTopClientInterface $iTopClient, private sfCacheInterface $restOperationsCache, private string $projectDir, private LoggerInterface $mcpLogger)
+    private ?string $instructions = null;
+
+    public function __construct(private iTopClientInterface $iTopClient, private sfCacheInterface $restOperationsCache, private string $projectDir, private LoggerInterface $mcpLogger, private string $instructionsAddendumFile = '')
     {
-        $this->builder = new Builder();    
+        $this->builder = new Builder();
     }
 
     public function setServerInfo(
@@ -92,12 +93,38 @@ class iTopBuilder
      * This can be used by clients to improve the LLM's understanding of available tools, resources,
      * etc. It can be thought of like a "hint" to the model. For example, this information MAY
      * be added to the system prompt.
+     *
+     * If APP_INSTRUCTIONS_ADDENDUM_FILE points at a readable file, its content is appended to
+     * these instructions when the server is built - see build() and getFinalInstructions(). This
+     * lets a deployment add its own operating rules (data quality, local workflows, ...) without
+     * editing this value or the application's tracked config.
      */
     public function setInstructions(?string $instructions): self
     {
-        $this->builder->setInstructions($instructions);
+        $this->instructions = $instructions;
 
         return $this;
+    }
+
+    /**
+     * Appends the content of APP_INSTRUCTIONS_ADDENDUM_FILE, if configured and readable, to the
+     * instructions set via setInstructions().
+     */
+    protected function getFinalInstructions(): ?string
+    {
+        $addendumFile = trim($this->instructionsAddendumFile);
+        if ($addendumFile === '') {
+            return $this->instructions;
+        }
+        $path = $this->projectDir.'/'.$addendumFile;
+        if (!is_file($path) || !is_readable($path)) {
+            return $this->instructions;
+        }
+        $addendum = trim(file_get_contents($path));
+        if ($addendum === '') {
+            return $this->instructions;
+        }
+        return trim((string)$this->instructions)."\n\n".$addendum;
     }
 
     /**
@@ -363,6 +390,7 @@ class iTopBuilder
     {
         $toolsDirs = $this->getDiscoveryDirs();
         $this->setDiscovery($this->projectDir, $toolsDirs);
+        $this->builder->setInstructions($this->getFinalInstructions());
         return $this->builder->build();
     }
     
