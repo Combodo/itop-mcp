@@ -114,4 +114,76 @@ class iTopGetTools extends iTopRestTools
             ]
        );
     }
+
+    /**
+     * This tool searches for OPEN Incidents and User Requests in iTop whose title or description
+     * matches any of the given keywords, ACROSS ALL CALLERS.
+     *
+     * Unlike the caller-scoped search tools above, this one is meant to catch duplicates: the same
+     * issue reported by different people. It only retrieves candidates, it does NOT decide whether two
+     * tickets describe the same issue - judge that yourself from the title and description returned,
+     * and enrich the existing ticket (update-incident / update-user-request) instead of creating a new
+     * one when they do match.
+     *
+     * Incident and UserRequest are queried through their common parent class 'Ticket', filtered on
+     * 'operational_status' (ongoing/resolved/closed), the only status attribute shared by both classes -
+     * the detailed status (new, assigned, ...) is class-specific and can be obtained afterwards with
+     * get-object-details-from-id.
+     * @param string[] $keywords The keywords to look for in the title and the description of open tickets (combined with OR)
+     * @param string $ticket_type Optional, restrict the search to 'Incident' or 'UserRequest' (default 'any', both classes)
+     * @param int $limit Optional, the maximum number of tickets to return
+     */
+    #[McpTool(name: TOOL_PREFIX.'find-similar-open-tickets', annotations: new ToolAnnotations(null, true, false, true, false))]
+    public function findSimilarOpenTickets(array $keywords, string $ticket_type = 'any', int $limit = 20): string
+    {
+        $this->mcpLogger->info('[Tool called] find-similar-open-tickets');
+
+        $conditions = [];
+        foreach ($keywords as $keyword) {
+            $keyword = $this->sanitizeForOql((string)$keyword);
+            if ($keyword === '') {
+                continue;
+            }
+            $conditions[] = "title LIKE '%$keyword%' OR description LIKE '%$keyword%'";
+        }
+        if (count($conditions) === 0) {
+            $error = 'Error: no usable keyword. Provide at least one keyword made of letters or digits.';
+            $this->mcpLogger->error('[Tool called] find-similar-open-tickets', ['error' => $error, 'keywords' => $keywords]);
+            return $error;
+        }
+
+        switch ($ticket_type) {
+            case 'Incident':
+            case 'UserRequest':
+                $class = $ticket_type;
+                $classFilter = '';
+                break;
+            default:
+                // Ticket is the abstract parent of Incident and UserRequest: querying it covers both
+                // classes at once. finalclass keeps other Ticket subclasses (Problem, Change...) out.
+                $class = 'Ticket';
+                $classFilter = " AND finalclass IN ('Incident','UserRequest')";
+        }
+
+        $query = "SELECT $class WHERE operational_status = 'ongoing'$classFilter AND (".implode(' OR ', $conditions).')';
+
+        return $this->runToolFromTemplates('findSimilarOpenTickets', 'Ticket',
+            [
+                'class' => $class,
+                'query' => $query,
+                'limit' => $limit,
+            ]
+        );
+    }
+
+    /**
+     * Removes the characters that would let a keyword break out of its OQL string literal, or turn it
+     * into a match-everything pattern.
+     */
+    protected function sanitizeForOql(string $keyword): string
+    {
+        $keyword = str_replace(["\\", "'", '"', '%', '_'], '', $keyword);
+        $keyword = preg_replace('/[\x00-\x1F\x7F]/u', '', $keyword);
+        return trim($keyword);
+    }
 }

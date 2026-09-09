@@ -1,0 +1,13 @@
+{% if json.objects === null %}
+No open ticket matches these keywords in iTop. There is no apparent duplicate.
+{% else %}
+{% for obj in json.objects %}
+class Ticket:
+  id,ref,finalclass,title,operational_status,caller_id_friendlyname,org_id_friendlyname,start_date
+
+Ticket {
+  {{obj.key}}, {{obj.fields.ref}}, {{obj.fields.finalclass}}, "{{obj.fields.title|e('js')}}", {{obj.fields.operational_status}}, "{{obj.fields.caller_id_friendlyname|e('js')}}", "{{obj.fields.org_id_friendlyname|e('js')}}", {{obj.fields.start_date}}
+  description: "{{obj.fields.description|e('js')}}"
+}
+{% endfor %}
+{% endif %}
