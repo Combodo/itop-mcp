@@ -79,7 +79,7 @@ class iTopSchemaTools
             $output .= "    - {$code} ({$fieldInfo['label']}), type: {$type}{$mandatory}{$description}\n";
         }
         $workflow = $info['workflow'];
-        if (count($workflow['transitions'])) {
+        if (count($workflow['transitions'] ?? [])) {
             $output .= "\n$className life cycle:\nThe possible values and transitions of the '{$workflow['state_att_code']}' field are the following:\n";
             foreach($workflow['transitions'] as $transition) {
                 $output .= "  $transition";
