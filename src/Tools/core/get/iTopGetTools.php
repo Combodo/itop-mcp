@@ -41,7 +41,7 @@ class iTopGetTools extends iTopRestTools
     {
         $this->mcpLogger->info('[Tool called] get-person-from-email');
         return $this->runToolFromTemplates('getPersonFromEmail', 'Anything', [
-            'email' => $email,
+            'email' => $this->escapeOqlLiteral($email),
             'fields' => $this->datamodel->getListZlist('Person'),
         ]);
     }
@@ -54,7 +54,7 @@ class iTopGetTools extends iTopRestTools
     {
         $this->mcpLogger->info('[Tool called] get-person-from-fullname');
         return $this->runToolFromTemplates('getPersonFromFullname', 'Anything', [
-            'fullname' => $fullname,
+            'fullname' => $this->escapeOqlLiteral($fullname),
             'fields' => $this->datamodel->getListZlist('Person'),
         ]);
     }
@@ -71,6 +71,7 @@ class iTopGetTools extends iTopRestTools
         if (count($phones) === 0) {
             throw new \Exception('Datamodel issue: there seem to be no phone number attribute on the Person class!');
         }
+        $telephone = $this->escapeOqlLiteral($telephone);
         $conditions = array_map(function($item) use($telephone) { return "$item = '$telephone'"; }, $phones);
         $whereClause = implode(' OR ', $conditions);
         return $this->runToolFromTemplates('getPersonFromTelephone', 'Anything', [
@@ -105,11 +106,12 @@ class iTopGetTools extends iTopRestTools
     #[McpTool(name: TOOL_PREFIX.'search-user-request-by-caller-status-start-date', annotations: new ToolAnnotations(null, true, false, true, false))]
     public function searchUserRequestByCallerStatusStartDate(#[Schema(format: 'email')] string $caller_email, array $statuses = [], string $start_date = '', string $condition = 'greater_than'): string
     {
+        $statuses = array_map(fn($status) => $this->escapeOqlLiteral((string)$status), $statuses);
         return $this->runToolFromTemplates('searchUserRequestFromCallerStatusDate', 'UserRequest',
             [
-                'caller_email' => $caller_email,
-                'statuses' => count($statuses) > 0 ? "'".implode("','", $statuses)."'" : '', 
-                'start_date' => $start_date,
+                'caller_email' => $this->escapeOqlLiteral($caller_email),
+                'statuses' => count($statuses) > 0 ? "'".implode("','", $statuses)."'" : '',
+                'start_date' => $this->escapeOqlLiteral($start_date),
                 'condition' => $condition === 'greater_than' ? '>=' : '<=',
             ]
        );
