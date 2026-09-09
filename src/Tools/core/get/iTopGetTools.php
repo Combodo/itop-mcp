@@ -82,7 +82,7 @@ class iTopGetTools extends iTopRestTools
     protected function getPhoneFieldsFromPerson(): array
     {
         $phones = [];
-        $fields = $this->datamodel->getClassSchema('Person');
+        $fields = $this->datamodel->getClassSchema('Person')['fields'] ?? [];
         foreach($fields as $field) {
             if ($field['type'] === 'AttributePhoneNumber') {
                 $phones[] = $field['code'];
