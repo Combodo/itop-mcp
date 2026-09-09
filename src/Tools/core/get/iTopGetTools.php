@@ -114,4 +114,29 @@ class iTopGetTools extends iTopRestTools
             ]
        );
     }
+
+    /**
+     * This tool searches for existing Incidents in iTop based on:
+     * - the email of the caller
+     * - an optional list of statuses for the Incident.
+     * - an optional start date
+     * - if a start date is specified, the condition/operator: either 'greater_than' or 'less_than'
+     * @param string $caller_email The email of the caller
+     * @param string[] $statuses Optional, a list of status codes (multiple values will be combined with a OR condition). Call get-class-schema('Incident') to find the possible values for the status field.
+     * @param string $start_date Optional, the start date-time of the Incident (format as a MySQL DateTime (YYYY-MM-DD hh:ii:ss)
+     * @param string $condition Optional, the condiotnal operator for the start date: either 'greater_than" or 'less_than'
+     */
+    #[McpTool(name: TOOL_PREFIX.'search-incident-by-caller-status-start-date', annotations: new ToolAnnotations(null, true, false, true, false))]
+    public function searchIncidentByCallerStatusStartDate(#[Schema(format: 'email')] string $caller_email, array $statuses = [], string $start_date = '', string $condition = 'greater_than'): string
+    {
+        $statuses = array_map(fn($status) => $this->escapeOqlLiteral((string)$status), $statuses);
+        return $this->runToolFromTemplates('searchIncidentFromCallerStatusDate', 'Incident',
+            [
+                'caller_email' => $this->escapeOqlLiteral($caller_email),
+                'statuses' => count($statuses) > 0 ? "'".implode("','", $statuses)."'" : '',
+                'start_date' => $this->escapeOqlLiteral($start_date),
+                'condition' => $condition === 'greater_than' ? '>=' : '<=',
+            ]
+       );
+    }
 }

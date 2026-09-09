@@ -46,6 +46,29 @@ class iTopUpdateTools extends iTopRestTools
     }
 
     /**
+     * This tool updates an Incident in iTop by adding an entry to the log and optionally updating the title or the description
+     * @param int $id The identifier of the Incident to update
+     * @param string $additionalLogEntryHtml An new entry to add to the log of the Incident - NOTE the log entry MUST BE formatted in HTML
+     * @param string $title Specify the new title for the Incident (leave empty for no change)
+     * @param string $descriptionHtml Specify the new description for the Incident (leave empty for no change) - NOTE the descriptipon MUST BE formatted in HTML
+     */
+    #[McpTool(name: TOOL_PREFIX.'update-incident', annotations: new ToolAnnotations(null, false, true, false, false))]
+    public function updateIncident(int $id, string $additionalLogEntryHtml, string $title = '', string $descriptionHtml = ''): string
+    {
+        $this->mcpLogger->info('[Tool called] update-incident');
+        return $this->runToolFromTemplates('updateIncident', 'Anything',
+            [
+                'id' => $id,
+                'title' => $title,
+                'description' => $descriptionHtml,
+                'log' => $additionalLogEntryHtml,
+                'output_fields' => $this->datamodel->getListZlist('Incident'),
+                'log_field' => 'public_log',
+            ]
+        );
+    }
+
+    /**
      * This tool can update any object in iTop.
      * 
      * IMPORTANT: before calling this tool use the tool 'list-all-classes' to determine the list of available classes

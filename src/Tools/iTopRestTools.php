@@ -36,4 +36,21 @@ abstract class iTopRestTools
     {
         return $this->iTopClient->postJsonToItop($json);
     }
+
+    /**
+     * Removes the characters that would let a value break out of its OQL string literal:
+     * quotes, the escape character, and control characters. Meant for exact-match values
+     * (equality, IN lists) - a LIKE pattern also needs its wildcards (%, _) stripped,
+     * which callers must handle themselves.
+     *
+     * Duplicated here (rather than shared) because this PR and #8 are independent,
+     * isolated proposals - see this PR's discussion for why, and the intent to collapse
+     * the duplication once both land.
+     */
+    protected function escapeOqlLiteral(string $value): string
+    {
+        $value = str_replace(["\\", "'", '"'], '', $value);
+        $value = preg_replace('/[\x00-\x1F\x7F]/u', '', $value);
+        return trim($value);
+    }
 }

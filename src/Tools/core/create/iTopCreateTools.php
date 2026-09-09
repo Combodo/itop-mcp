@@ -52,4 +52,16 @@ class iTopCreateTools extends iTopRestTools
             ['title' => $title, 'description' => $description, 'caller_id' => $callerId, 'org_id' => $orgId, 'impact' => $impact, 'urgency' => $urgency]
         );
     }
+
+    /**
+     * This tool creates an Incident in iTop
+     */
+    #[McpTool(name: TOOL_PREFIX.'create-incident', annotations: new ToolAnnotations(null, false, true, false, false))]
+    public function createIncident(string $title, string $description, int $callerId, int $orgId, int $impact = 3, int $urgency = 4): string
+    {
+        $this->mcpLogger->info('[Tool called] create-incident');
+        return $this->runToolFromTemplates('createIncident', 'Incident',
+            ['title' => $title, 'description' => $description, 'caller_id' => $callerId, 'org_id' => $orgId, 'impact' => $impact, 'urgency' => $urgency]
+        );
+    }
 }
