@@ -76,13 +76,56 @@ class iTopSchemaTools
             }
             $description = $fieldInfo['description'] === '' ? '' : ', '.$fieldInfo['description'];
             $mandatory = $fieldInfo['is_null_allowed'] === 'false' ? ' mandatory ' : '';
-            $output .= "    - {$code} ({$fieldInfo['label']}), type: {$type}{$mandatory}{$description}\n";
+            $computed = ($code === 'priority' && ($info['priority_matrix'] ?? null) !== null)
+                ? ' [COMPUTED from impact and urgency, setting it directly has no effect - see below]'
+                : '';
+            $output .= "    - {$code} ({$fieldInfo['label']}), type: {$type}{$mandatory}{$description}{$computed}\n";
         }
+        $output .= $this->renderPriorityMatrix($className, $info);
         $workflow = $info['workflow'];
         if (count($workflow['transitions'] ?? [])) {
             $output .= "\n$className life cycle:\nThe possible values and transitions of the '{$workflow['state_att_code']}' field are the following:\n";
             foreach($workflow['transitions'] as $transition) {
                 $output .= "  $transition";
+            }
+        }
+        return $output;
+    }
+
+    /**
+     * Explains how the priority is derived, when the class computes it.
+     *
+     * Worth spelling out to the agent: 'priority' looks like an ordinary enum field in the list above,
+     * but iTop overwrites it on every save, so the only way to influence it is through impact and
+     * urgency.
+     */
+    protected function renderPriorityMatrix(string $className, array $info): string
+    {
+        $matrix = $info['priority_matrix'] ?? null;
+        if ($matrix === null) {
+            return '';
+        }
+        $fields = $info['fields'];
+        $legend = function(string $code) use ($fields): string {
+            $values = $fields[$code]['values'] ?? [];
+            $parts = [];
+            foreach ($values as $value => $label) {
+                $parts[] = $label === '' ? (string)$value : "$value ($label)";
+            }
+            return implode(', ', $parts);
+        };
+
+        $output = "\n$className priority computation:\n";
+        $output .= "  'priority' is NOT entered: iTop recomputes it from 'impact' and 'urgency' on every save,\n";
+        $output .= "  so setting 'priority' directly has no effect. Choose 'impact' and 'urgency' to reach the\n";
+        $output .= "  priority you want.\n";
+        $output .= "    impact: ".$legend('impact')."\n";
+        $output .= "    urgency: ".$legend('urgency')."\n";
+        $output .= "    priority: ".$legend('priority')."\n";
+        $output .= "  Resulting priority:\n";
+        foreach ($matrix as $impact => $row) {
+            foreach ($row as $urgency => $priority) {
+                $output .= "    impact $impact + urgency $urgency -> priority $priority\n";
             }
         }
         return $output;

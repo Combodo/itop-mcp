@@ -89,11 +89,13 @@ class DatamodelService
             throw new \Exception("Class $className not found or ambiguous in the datamodel XML. ".$nodes->count()." elements found.");
         }
         $classNode = $nodes->item(0);
+        $inheritedPriorityMatrix = null;
         $parent = $this->getChildContents('parent', $classNode);
         if (!in_array($parent, ['DBObject', 'CMDBOject', 'cmdbAbstractObject'])) {
             // Inherit the fields from the parent class(es)
             $schema = $this->getClassSchema($parent);
             $fields = $schema['fields'];
+            $inheritedPriorityMatrix = $schema['priority_matrix'] ?? null;
         }
         $fieldNodes = $this->xp->query("/itop_design/classes/class[@id='$className']/fields/field");
         foreach($fieldNodes as $fieldNode) {
@@ -117,9 +119,57 @@ class DatamodelService
             $fields[$fieldInfo['code']] = $fieldInfo;
         }
         $workflow = $this->getWorkflowfromXml($className);
-        return ['fields' => $fields, 'workflow' => $workflow];
+        // A class that does not redefine ComputePriority() inherits its parent's.
+        $priorityMatrix = $this->getPriorityMatrixFromXml($className) ?? $inheritedPriorityMatrix;
+        return ['fields' => $fields, 'workflow' => $workflow, 'priority_matrix' => $priorityMatrix];
     }
-    
+
+    /**
+     * Reads the impact x urgency -> priority matrix out of the class' ComputePriority() method.
+     *
+     * In iTop the priority of a ticket is not entered, it is recomputed from impact and urgency on
+     * every save (ComputeValues() calls ComputePriority()). The matrix lives as PHP source inside the
+     * datamodel, so it can be customized per instance — hence reading it rather than assuming it.
+     *
+     * This parses the shape shipped by iTop ($aPriorities = array(impact => array(urgency => priority))).
+     * A heavily rewritten ComputePriority() will not match, in which case this returns null and callers
+     * simply say the priority is computed, without claiming to know how.
+     *
+     * @return array<int, array<int, int>>|null
+     */
+    protected function getPriorityMatrixFromXml(string $className): ?array
+    {
+        $nodes = $this->xp->query("//classes/class[@id='$className']/methods/method[@id='ComputePriority']/code");
+        if ($nodes->count() === 0) {
+            return null;
+        }
+        $code = $nodes->item(0)->textContent;
+
+        // Each 'impact => array(urgency => priority, ...)' entry of the outer array.
+        if (!preg_match_all('/(\d+)\s*=>\s*(?:array\s*\(|\[)([^)\]]*)(?:\)|\])/s', $code, $matches, PREG_SET_ORDER)) {
+            return null;
+        }
+        $matrix = [];
+        foreach ($matches as $match) {
+            $impact = (int)$match[1];
+            if (preg_match_all('/(\d+)\s*=>\s*(\d+)/', $match[2], $inner, PREG_SET_ORDER)) {
+                foreach ($inner as $pair) {
+                    $matrix[$impact][(int)$pair[1]] = (int)$pair[2];
+                }
+            }
+        }
+        return $matrix === [] ? null : $matrix;
+    }
+
+    /**
+     * @return array<int, array<int, int>>|null
+     */
+    public function getPriorityMatrix(string $className): ?array
+    {
+        $info = $this->getClassSchema($className);
+        return $info['priority_matrix'] ?? null;
+    }
+
     protected function getChildContents(string $path, DOMNode $node): string
     {
         $nodes = $this->xp->query($path, $node);

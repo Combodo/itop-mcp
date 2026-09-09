@@ -43,6 +43,12 @@ class iTopCreateTools extends iTopRestTools
     
     /**
      * This tool creates a User Request in iTop
+     *
+     * There is no 'priority' parameter: iTop derives it from 'impact' and 'urgency'. Call
+     * get-class-schema('UserRequest') to see the resulting impact x urgency -> priority matrix.
+     *
+     * @param int $impact Who is affected: 1 = a whole department, 2 = a service, 3 = a single person
+     * @param int $urgency How fast it must be dealt with: 1 = critical, 2 = high, 3 = medium, 4 = low
      */
     #[McpTool(name: TOOL_PREFIX.'create-user-request', annotations: new ToolAnnotations(null, false, true, false, false))]
     public function createUserRequest(string $title, string $description, int $callerId, int $orgId, int $impact = 3, int $urgency = 4): string
