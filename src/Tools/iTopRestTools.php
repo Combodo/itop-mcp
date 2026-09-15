@@ -36,4 +36,29 @@ abstract class iTopRestTools
     {
         return $this->iTopClient->postJsonToItop($json);
     }
+    
+    /**
+     * Quote the string to protect from user input breaking the JSON / OQL
+     * Based on MySQL's real_escape_string logic
+     * @param string $value
+     * @return string
+     */
+    public static function quoteString(string $value)
+    {
+        $replacementMap = [
+            "\0" => "\\0",
+            "\n" => "\\n",
+            "\r" => "\\r",
+            "\t" => "\\t",
+            chr(26) => "\\Z",
+            chr(8) => "\\b",
+            '"' => '\"',
+            "'" => "\'",
+            '_' => "\_",
+            "%" => "\%",
+            '\\' => '\\\\'
+        ];
+        
+        return strtr($value, $replacementMap);
+    }
 }

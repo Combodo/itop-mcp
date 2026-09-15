@@ -41,7 +41,7 @@ class iTopGetTools extends iTopRestTools
     {
         $this->mcpLogger->info('[Tool called] get-person-from-email');
         return $this->runToolFromTemplates('getPersonFromEmail', 'Anything', [
-            'email' => $email,
+            'email' => static::quoteString($email),
             'fields' => $this->datamodel->getListZlist('Person'),
         ]);
     }
@@ -54,7 +54,7 @@ class iTopGetTools extends iTopRestTools
     {
         $this->mcpLogger->info('[Tool called] get-person-from-fullname');
         return $this->runToolFromTemplates('getPersonFromFullname', 'Anything', [
-            'fullname' => $fullname,
+            'fullname' => static::quoteString($fullname),
             'fields' => $this->datamodel->getListZlist('Person'),
         ]);
     }
@@ -71,7 +71,7 @@ class iTopGetTools extends iTopRestTools
         if (count($phones) === 0) {
             throw new \Exception('Datamodel issue: there seem to be no phone number attribute on the Person class!');
         }
-        $conditions = array_map(function($item) use($telephone) { return "$item = '$telephone'"; }, $phones);
+        $conditions = array_map(function($item) use($me, $telephone) { return "$item = '".iTopGetTools::quoteString($telephone)."'"; }, $phones);
         $whereClause = implode(' OR ', $conditions);
         return $this->runToolFromTemplates('getPersonFromTelephone', 'Anything', [
             'query' => 'SELECT Person WHERE '.$whereClause,
@@ -107,7 +107,7 @@ class iTopGetTools extends iTopRestTools
     {
         return $this->runToolFromTemplates('searchUserRequestFromCallerStatusDate', 'UserRequest',
             [
-                'caller_email' => $caller_email,
+                'caller_email' => static::quoteString($caller_email),
                 'statuses' => count($statuses) > 0 ? "'".implode("','", $statuses)."'" : '', 
                 'start_date' => $start_date,
                 'condition' => $condition === 'greater_than' ? '>=' : '<=',
