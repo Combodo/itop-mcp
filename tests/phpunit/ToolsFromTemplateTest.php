@@ -117,4 +117,14 @@ EXPECTED;
         ->willReturn(json_encode($outputData));
         return $mockiTopClient;
     }
+    
+    public function testQuoteString(): void
+    {
+        $this->assertEquals("O\\'Reilly", iTopGetTools::quoteString("O'Reilly"));
+        $this->assertEquals("Line1\\nLine2", iTopGetTools::quoteString("Line1\nLine2"));
+        $this->assertEquals("Tab\\tSeparated", iTopGetTools::quoteString("Tab\tSeparated"));
+        $this->assertEquals("Percent\\%Sign", iTopGetTools::quoteString("Percent%Sign"));
+        $this->assertEquals("Underscore\\_Test", iTopGetTools::quoteString("Underscore_Test"));
+        $this->assertEquals("Backslash\\\\Test", iTopGetTools::quoteString("Backslash\\Test"));
+    }
 }

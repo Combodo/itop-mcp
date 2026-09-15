@@ -11,7 +11,10 @@ class Kernel extends BaseKernel
     
     public function __construct(string $environment, string $debug)
     {
-        define('TOOL_PREFIX', $_ENV['APP_TOOLS_PREFIX']);
+        if (!defined('TOOL_PREFIX')) {
+            // Prevent redefinition when running unit tests
+            define('TOOL_PREFIX', $_ENV['APP_TOOLS_PREFIX']);
+        }
         parent::__construct($environment, $debug); 
     }
 }
