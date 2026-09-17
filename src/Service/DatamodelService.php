@@ -208,5 +208,18 @@ class DatamodelService
         }
         return $workflow;
     }
+    
+    /**
+     * Extract the name of the selected class from an OQL query and check that the class is valid for the current datamodel
+     * @param string $oql
+     */
+    public function getClassFromOQL(string $oql)
+    {
+        $aMatches = [];
+        if (!preg_match('/^SELECT ([_a-zA-Z][_a-zA-Z0-9]*)/', $oql, $aMatches)) {
+            throw new \InvalidArgumentException("Syntax error: '$oql' does not look like a valid OQL query.");
+        }
+        return $aMatches[1];
+    }
 }
 
