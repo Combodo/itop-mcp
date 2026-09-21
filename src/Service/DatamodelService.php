@@ -231,7 +231,7 @@ class DatamodelService
         
         $className = $aMatches[1];
         if (!$this->IsValidClass($className)) {
-            throw new \InvalidArgumentException("Class '$className' is not a valid class in the current datamodel.");
+            throw new \InvalidArgumentException("Class '$className' is not a valid class in the current datamodel. Use the tool '".TOOL_PREFIX."list-all-classes' to get the list of valid classes.");
         }
         return $className;
     }
