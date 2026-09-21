@@ -52,19 +52,20 @@ JSON;
             ]
         ];
         $mockiTopClient = $this->MockiTopClientThatWillReturn($input, $output);
-        $tools = new iTopGetTools($this->twigEnvironment, $mockiTopClient, $this->logger, $this->datamodel);
-
-        $this->assertEquals(
+        
+        $expected  =
 <<<EXPECTED
 class Person:
   id, friendlyname, email, org_id
 
-Person {
+Person  {
   1, "Test Person", "test@demo.com", "1"
 }
 
-EXPECTED
-            , $tools->getPersonFromEmail('test@demo.com'));
+EXPECTED;
+
+        $tools = new iTopGetTools($this->twigEnvironment, $mockiTopClient, $this->logger, $this->datamodel);
+        $this->assertEquals($expected, $tools->getPersonFromEmail('test@demo.com'));
     }
     
     public function testGetPersonFromTelephone(): void
@@ -100,12 +101,51 @@ JSON;
 class Person:
   id, friendlyname, email, org_id
 
-Person {
+Person  {
   1, "Test Person", "test@demo.com", "1"
 }
 EXPECTED;
         
         $this->assertEquals(trim($expected), trim($tools->getPersonFromTelephone('123456789')));
+    }
+    
+    public function testSearchAnyObjectByOql()
+    {
+        // Mock the iTopClient service, to check that the templating works
+        $oql = "SELECT Person WHERE name LIKE '%Smith%'";
+        $input =
+<<<JSON
+{
+  "operation":"core/get",
+  "class": "Person",
+  "key": "SELECT\u0020Person\u0020WHERE\u0020name\u0020LIKE\u0020\u0027\u0025Smith\u0025\u0027",
+  "limit": 20,
+  "page": 1,
+  "output_fields": "friendlyname,name,org_id,status,location_id,email,phone"
+}
+JSON;
+        $output = [
+            'objects' => [
+                'Person::1' => [
+                    'class' => 'Person',
+                    'key' => 1,
+                    'fields' => ['friendlyname' => 'John Smith', 'email' => 'john.smith@demo.com'],
+                ],
+            ],
+        ];
+        $mockiTopClient = $this->MockiTopClientThatWillReturn($input, $output);
+        
+        $expected =
+<<<JSON
+class Person:
+  id, friendlyname, email
+
+Person  {
+  1, "John Smith", "john.smith@demo.com"
+}
+JSON;   
+        $tools = new iTopGetTools($this->twigEnvironment, $mockiTopClient, $this->logger, $this->datamodel);
+        $this->assertEquals(trim($expected), trim($tools->searchAnyObjectByOql($oql)));
     }
 
     protected function MockiTopClientThatWillReturn(string $inputData, array $outputData)

@@ -10,7 +10,7 @@ class {{ className }}:
 {% endfor %}
 
 
-{{ className }} {
+{{ className }} {% if json.message is defined %}(Total number of objects {{json.message|lower}}){% endif %} {
 {% for obj in json.objects %}
   {{obj.key}}{% for code, value in obj.fields %}{% if code !== 'id' and value is not iterable %}, "{{ value }}"{% endif %}{% endfor ~%}
 {% endfor %}
