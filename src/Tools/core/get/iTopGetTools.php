@@ -71,7 +71,7 @@ class iTopGetTools extends iTopRestTools
         if (count($phones) === 0) {
             throw new \Exception('Datamodel issue: there seem to be no phone number attribute on the Person class!');
         }
-        $conditions = array_map(function($item) use($me, $telephone) { return "$item = '".iTopGetTools::quoteString($telephone)."'"; }, $phones);
+        $conditions = array_map(function($item) use($telephone) { return "$item = '".iTopGetTools::quoteString($telephone)."'"; }, $phones);
         $whereClause = implode(' OR ', $conditions);
         return $this->runToolFromTemplates('getPersonFromTelephone', 'Anything', [
             'query' => 'SELECT Person WHERE '.$whereClause,
