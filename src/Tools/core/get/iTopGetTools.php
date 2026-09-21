@@ -122,12 +122,18 @@ class iTopGetTools extends iTopRestTools
      * IMPORTANT: Do NOT assume that the datamodel is the "standard" one, use the tool get-class-schema - before creating the OQL query -
      * to find the possible values for the class, its fields and its relations.
      * @param string $oql The OQL query to execute. It must be a valid OQL query that returns objects of the desired class.
-     * @param int $limit The number of objects per page
-     * @param int $page The (one based) number of the page
+     * @param int $limit The number of objects per page (> 0)
+     * @param int $page The (one based) number of the page (>= 1)
      */
     #[McpTool(name: TOOL_PREFIX.'search-any-object-by-oql', annotations: new ToolAnnotations(null, true, false, true, false))]
     public function searchAnyObjectByOql(string $oql, int $limit = 20, int $page = 1 ): string
     {
+        if ($limit <= 0) {
+            throw new \InvalidArgumentException('Limit must be a positive integer');
+        }
+        if ($page < 1) {
+            throw new \InvalidArgumentException('Page must be a positive integer (1 or greater)');
+        }
         $className = $this->datamodel->getClassFromOQL($oql);
         $outputFields = $this->datamodel->getListZlist($className);
         return $this->runToolFromTemplates('searchAnyObjectByOql', 'Anything',

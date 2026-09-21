@@ -4,6 +4,7 @@ namespace App\Tests\Phpunit;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use App\Service\DatamodelService;
 use Symfony\Contracts\Cache\CacheInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 
 class DatamodelServiceTest extends KernelTestCase
@@ -38,19 +39,39 @@ class DatamodelServiceTest extends KernelTestCase
     public function testGetClassFromOQLOk(): void
     {
         $service = new DatamodelService(__DIR__.'/../../data/datamodel-production.xml', $this->cache, 'FR FR');
+        $this->assertEquals('Person', $service->getClassFromOQL("  SELECT Person WHERE name='Foo'"));
+        
         $this->assertEquals('Person', $service->getClassFromOQL("SELECT Person WHERE name='Foo'"));
+        
+        $this->assertEquals('Person', $service->getClassFromOQL("SELECT P FROM Person WHERE name='Foo'"));
+
+        $this->assertEquals('Person', $service->getClassFromOQL("SELECT P,O FROM Person JOIN Organization AS O ON P.org_d = O.id WHERE name='Foo'"));
+        
+        $this->assertEquals('Person', $service->getClassFromOQL("SELECT Person AS P WHERE name='Foo'"));
+        
+        $this->assertEquals('Person', $service->getClassFromOQL("SELECT Person AS P JOIN Organization AS O WHERE P.name='Foo'"));
     }
     
-    public function testGetClassFromOQLKo(): void
+    /**
+     * @param string $oql
+     */
+    #[DataProvider('oqlKoProvider')]
+    public function testGetClassFromOQLKo(string $oql): void
     {
         $service = new DatamodelService(__DIR__.'/../../data/datamodel-production.xml', $this->cache, 'FR FR');
         
         $this->expectException("InvalidArgumentException");
-        $this->assertEquals('Person', $service->getClassFromOQL("SELECT 123456 WHERE name='Foo'"));
-        
-        $this->expectException("InvalidArgumentException");
-        $this->assertEquals('Person', $service->getClassFromOQL("NOT A SELECT Person"));
-        
+        $this->assertEquals('Person', $service->getClassFromOQL($oql));
+    }
+    
+    public static function oqlKoProvider(): array
+    {
+        return [
+            ["SELECT 123456 WHERE name='Foo'"],
+            ["NOT A SELECT Person"],
+            ["SELECT FROM Person WHERE name='Foo'"],
+            ["SELECT NotAValidClassName WHERE name='Foo'"],
+        ];
     }
 }
 

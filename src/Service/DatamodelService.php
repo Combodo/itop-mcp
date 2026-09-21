@@ -29,6 +29,12 @@ class DatamodelService
         return $classes;
     }
     
+    public function IsValidClass(string $className): bool
+    {
+        $classes = $this->getClasses();
+        return isset($classes[$className]);
+    }
+    
     public function getClassSchema(string $className): array
     {
         $classSchema = $this->datamodelCache->get('ClassSchema-'.$className.'-'.$this->language, function(ItemInterface $item) use ($className) {
@@ -216,10 +222,18 @@ class DatamodelService
     public function getClassFromOQL(string $oql)
     {
         $aMatches = [];
-        if (!preg_match('/^SELECT ([_a-zA-Z][_a-zA-Z0-9]*)/', $oql, $aMatches)) {
-            throw new \InvalidArgumentException("Syntax error: '$oql' does not look like a valid OQL query.");
+        $oql = trim($oql);
+        if (!preg_match('/^SELECT +([_a-zA-Z][_a-zA-Z0-9]*) +(?:JOIN|WHERE|AS)/', $oql, $aMatches)) {
+            if (!preg_match('/^SELECT +(?:[_a-zA-Z][_a-zA-Z0-9, ]*) +FROM +([_a-zA-Z][_a-zA-Z0-9]*)/', $oql, $aMatches)) {
+                throw new \InvalidArgumentException("Syntax error: '$oql' does not look like a valid OQL query.");
+            }
         }
-        return $aMatches[1];
+        
+        $className = $aMatches[1];
+        if (!$this->IsValidClass($className)) {
+            throw new \InvalidArgumentException("Class '$className' is not a valid class in the current datamodel.");
+        }
+        return $className;
     }
 }
 
