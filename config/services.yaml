@@ -12,6 +12,7 @@ parameters:
     app.language: '%env(APP_LANGUAGE)%'
     app.log_level: '%env(APP_LOG_LEVEL)%'
     app.tools_prefix: '%env(APP_TOOLS_PREFIX)%'
+    app.instructions_addendum_file: '%env(APP_INSTRUCTIONS_ADDENDUM_FILE)%'
     services:
         _defaults:
 
@@ -25,6 +26,7 @@ services:
             string $projectDir: '%kernel.project_dir%'
             string $datamodelFile: '%app.datamodel_file%'
             string $language: '%app.language%'
+            string $instructionsAddendumFile: '%app.instructions_addendum_file%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
