@@ -6,7 +6,14 @@ use Psr\Log\LoggerInterface;
 
 class iTopClient implements iTopClientInterface
 {
-    public function __construct(private Security $security, private LoggerInterface $mcpLogger, private string $iTopUrl)
+    public function __construct(
+        private Security $security,
+        private LoggerInterface $mcpLogger,
+        private string $iTopUrl,
+        private int $curlConnectTimeout,
+        private int $curlTimeout,
+        private bool $curlSslVerifyPeer
+    )
     {
         
     }
@@ -28,10 +35,10 @@ class iTopClient implements iTopClientInterface
             CURLOPT_ENCODING       => "",       // handle all encodings
             CURLOPT_USERAGENT      => "MCP-server", // who am i
             CURLOPT_AUTOREFERER    => true,     // set referer on redirect
-            CURLOPT_CONNECTTIMEOUT => 120,      // timeout on connect
-            CURLOPT_TIMEOUT        => 120,      // timeout on response
+            CURLOPT_CONNECTTIMEOUT => $this->curlConnectTimeout,      // timeout on connect
+            CURLOPT_TIMEOUT        => $this->curlTimeout,      // timeout on response
             CURLOPT_MAXREDIRS      => 10,       // stop after 10 redirects
-            CURLOPT_SSL_VERIFYPEER => false,    // Disabled SSL Cert checks
+            CURLOPT_SSL_VERIFYPEER => $this->curlSslVerifyPeer,
             CURLOPT_POST           => count($postData),
             CURLOPT_POSTFIELDS     => http_build_query($postData),
         ];
