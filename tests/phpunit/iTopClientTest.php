@@ -24,19 +24,19 @@ class iTopClientTest extends KernelTestCase
     
     public function testGetRestEndpointShortNoSlash()
     {
-        $client = new iTopClient($this->security, $this->logger, 'http://www.itop.com/demo');
+        $client = new iTopClient($this->security, $this->logger, 'http://www.itop.com/demo', 120, 120, false);
         $this->assertEquals('http://www.itop.com/demo/webservices/rest.php', $client->getRestEndpointUrl());
     }
     
     public function testGetRestEndpointShortSlash()
     {
-        $client = new iTopClient($this->security, $this->logger, 'http://www.itop.com/demo/');
+        $client = new iTopClient($this->security, $this->logger, 'http://www.itop.com/demo/', 120, 120, false);
         $this->assertEquals('http://www.itop.com/demo/webservices/rest.php', $client->getRestEndpointUrl());
     }
     
     public function testGetRestEndpointLong()
     {
-        $client = new iTopClient($this->security, $this->logger, 'http://www.itop.com/demo/webservices/rest.php');
+        $client = new iTopClient($this->security, $this->logger, 'http://www.itop.com/demo/webservices/rest.php', 120, 120, false);
         $this->assertEquals('http://www.itop.com/demo/webservices/rest.php', $client->getRestEndpointUrl());
     }
 }
