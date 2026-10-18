@@ -49,12 +49,12 @@ class AuthTokenAuthenticator extends AbstractAuthenticator
         $matches = [];
         if (!preg_match('/^Bearer (.+)$/', $authorizationHeader, $matches)) {
             // The Authorization header was improperly formatted, authentication fails
-            $this->mcpLogger->debug("Invalid authorization header format. Expecting: 'Bearer <token>', but got '$authorizationHeader'");
+            $this->mcpLogger->debug("Invalid authorization header format. Expecting: 'Bearer <token>'.");
             throw new CustomUserMessageAuthenticationException('Invalid authorization header format. Expecting: Bearer <token>');
         }
         $token = $matches[1];
         $this->mcpLogger->debug("Authorization header format Ok.");
-        $this->mcpLogger->debug("Bearer token = '$token'.");
+        $this->mcpLogger->debug("Bearer token received.");
         return new SelfValidatingPassport(new UserBadge($token), []);
     }
 
