@@ -105,11 +105,12 @@ class iTopGetTools extends iTopRestTools
     #[McpTool(name: TOOL_PREFIX.'search-user-request-by-caller-status-start-date', annotations: new ToolAnnotations(null, true, false, true, false))]
     public function searchUserRequestByCallerStatusStartDate(#[Schema(format: 'email')] string $caller_email, array $statuses = [], string $start_date = '', string $condition = 'greater_than'): string
     {
+        $statuses = array_map(fn($status) => static::quoteString((string)$status), $statuses);
         return $this->runToolFromTemplates('searchUserRequestFromCallerStatusDate', 'UserRequest',
             [
                 'caller_email' => static::quoteString($caller_email),
-                'statuses' => count($statuses) > 0 ? "'".implode("','", $statuses)."'" : '', 
-                'start_date' => $start_date,
+                'statuses' => count($statuses) > 0 ? "'".implode("','", $statuses)."'" : '',
+                'start_date' => static::quoteString($start_date),
                 'condition' => $condition === 'greater_than' ? '>=' : '<=',
             ]
        );

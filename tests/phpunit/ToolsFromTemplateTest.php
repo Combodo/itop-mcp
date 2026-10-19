@@ -167,4 +167,25 @@ JSON;
         $this->assertEquals("Underscore\\_Test", iTopGetTools::quoteString("Underscore_Test"));
         $this->assertEquals("Backslash\\\\Test", iTopGetTools::quoteString("Backslash\\Test"));
     }
+
+    /**
+     * Every caller-supplied value must stay inside its own OQL string literal: a quote in a
+     * status or in the start date must not close it and add conditions to the query.
+     * The OQL is checked once the JSON is decoded, as iTop does, so that the assertion does
+     * not depend on how Twig escapes each character.
+     */
+    public function testSearchUserRequestQuotesStatusesAndStartDate(): void
+    {
+        $expectedKey = <<<'OQL'
+SELECT UserRequest AS U JOIN Person AS P ON U.caller_id = P.id WHERE P.email='john@example.com' AND U.status IN('new','x\') OR (\'1\'=\'1') AND U.start_date >= '2026-01-01\' OR \'1\'=\'1'
+OQL;
+        $mockiTopClient = $this->createMock(iTopClient::class);
+        $mockiTopClient->expects(self::once())
+        ->method('postJsonToItop')
+        ->with($this->callback(fn(string $json) => (json_decode($json, true)['key'] ?? null) === $expectedKey))
+        ->willReturn(json_encode(['objects' => null, 'code' => 0, 'message' => 'Found: 0']));
+
+        $tools = new iTopGetTools($this->twigEnvironment, $mockiTopClient, $this->logger, $this->datamodel);
+        $tools->searchUserRequestByCallerStatusStartDate('john@example.com', ['new', "x') OR ('1'='1"], "2026-01-01' OR '1'='1");
+    }
 }
