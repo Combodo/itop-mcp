@@ -7,6 +7,7 @@ use App\Tools\core\get\iTopGetTools;
 use Twig\Environment;
 use Psr\Log\LoggerInterface;
 use App\Service\DatamodelService;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class ToolsFromTemplateTest extends KernelTestCase
 {
@@ -161,10 +162,38 @@ JSON;
     public function testQuoteString(): void
     {
         $this->assertEquals("O\\'Reilly", iTopGetTools::quoteString("O'Reilly"));
-        $this->assertEquals("Line1\\nLine2", iTopGetTools::quoteString("Line1\nLine2"));
-        $this->assertEquals("Tab\\tSeparated", iTopGetTools::quoteString("Tab\tSeparated"));
-        $this->assertEquals("Percent\\%Sign", iTopGetTools::quoteString("Percent%Sign"));
-        $this->assertEquals("Underscore\\_Test", iTopGetTools::quoteString("Underscore_Test"));
+        $this->assertEquals("Line1\nLine2", iTopGetTools::quoteString("Line1\nLine2"));
+        $this->assertEquals("Tab\tSeparated", iTopGetTools::quoteString("Tab\tSeparated"));
+        $this->assertEquals("Percent%Sign", iTopGetTools::quoteString("Percent%Sign"));
+        $this->assertEquals("Underscore_Test", iTopGetTools::quoteString("Underscore_Test"));
+        $this->assertEquals('Double "quotes"', iTopGetTools::quoteString('Double "quotes"'));
         $this->assertEquals("Backslash\\\\Test", iTopGetTools::quoteString("Backslash\\Test"));
+    }
+
+    /**
+     * Once quoted, a value must lex as one single OQL string literal, and come back unchanged when
+     * iTop unescapes it. The pattern is the single-quoted branch of the 'strval' rule of iTop's OQL
+     * lexer (core/oql/oql-lexer.plex), and iTop's parser unescapes the literal with stripslashes().
+     */
+    #[DataProvider('oqlLiteralProvider')]
+    public function testQuoteStringYieldsAValidOqlLiteral(string $value): void
+    {
+        $literal = "'".iTopGetTools::quoteString($value)."'";
+        $this->assertMatchesRegularExpression("/^'([^\\\\']|\\\\'|\\\\\\\\)*'$/", $literal);
+        $this->assertSame($value, stripslashes(substr($literal, 1, -1)));
+    }
+
+    public static function oqlLiteralProvider(): array
+    {
+        return [
+            'underscore in an email' => ['john_doe@example.com'],
+            'percent sign' => ['50% off'],
+            'apostrophe' => ["O'Reilly"],
+            'double quotes' => ['Double "quotes"'],
+            'backslash' => ['Back\\slash'],
+            'trailing backslash' => ['Ends with a backslash \\'],
+            'injection attempt' => ["test' OR '1'='1"],
+            'newline' => ["Line1\nLine2"],
+        ];
     }
 }

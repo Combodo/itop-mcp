@@ -38,27 +38,22 @@ abstract class iTopRestTools
     }
     
     /**
-     * Quote the string to protect from user input breaking the JSON / OQL
-     * Based on MySQL's real_escape_string logic
+     * Quote the string to protect from user input breaking the OQL string literal
+     * (between single quotes) it is inserted into.
+     * iTop's OQL lexer only accepts two escape sequences inside a quoted literal, \' and \\,
+     * which its parser then unescapes with stripslashes(): any other sequence, such as \_ or \%,
+     * is a syntax error. The JSON layer needs nothing from this method, since the .json.twig
+     * templates are rendered with Twig's 'js' escaping strategy.
      * @param string $value
      * @return string
      */
     public static function quoteString(string $value)
     {
         $replacementMap = [
-            "\0" => "\\0",
-            "\n" => "\\n",
-            "\r" => "\\r",
-            "\t" => "\\t",
-            chr(26) => "\\Z",
-            chr(8) => "\\b",
-            '"' => '\"',
             "'" => "\'",
-            '_' => "\_",
-            "%" => "\%",
             '\\' => '\\\\'
         ];
-        
+
         return strtr($value, $replacementMap);
     }
 }
