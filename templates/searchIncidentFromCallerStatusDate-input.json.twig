@@ -1,0 +1,6 @@
+{
+  "operation":"core/get",
+  "class": "Incident",
+  "key": "SELECT Incident AS I JOIN Person AS P ON I.caller_id = P.id WHERE P.email='{{caller_email}}'{% if statuses !== ''%} AND I.status IN({{ statuses }}){% endif%}{% if start_date !== '' %} AND I.start_date {{ condition }} '{{start_date}}'{% endif%}",
+  "output_fields": "id,ref,title,status,caller_id_friendlyname,org_id_friendlyname,priority"
+}

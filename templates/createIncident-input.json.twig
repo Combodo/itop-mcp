@@ -1,0 +1,14 @@
+{
+  "operation":"core/create",
+  "class":"Incident",
+  "output_fields": "ref,title,description,status,caller_id_friendlyname,org_id_friendlyname,priority",
+  "fields": {
+    "org_id": {{org_id}},
+    "caller_id": {{caller_id}},
+    "title": "{{title}}",
+    "description": "{{description}}",
+    "impact": {{impact}},
+    "urgency": {{urgency}}
+  },
+  "comment": "Created via the MCP server"
+}

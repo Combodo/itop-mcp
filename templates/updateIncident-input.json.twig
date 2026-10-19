@@ -1,0 +1,12 @@
+{
+  "operation": "core/update",
+  "class": "Incident",
+  "key": {{id}},
+  "fields": {
+{% if title !== '' %}    "title":"{{title}}",{% endif %}
+{% if description !== '' %}    "description":"{{description}}",{% endif %}
+    "{{ log_field }}":"{{ log }}"
+  },
+  "output_fields": "{{output_fields}}",
+  "comment": "Updated via the MCP server"
+}
