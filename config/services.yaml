@@ -50,6 +50,7 @@ services:
         # you CAN still use autowiring: we just want to show what it looks like without
         autowire: true
         calls:
+          - setServerInfo: ['%mcp.app%', '%mcp.version%', '%mcp.description%', '%mcp.icons%', '%mcp.website_url%']
           - setPaginationLimit: ['%mcp.pagination_limit%']
           - setInstructions: ['%mcp.instructions%']
           - setEventDispatcher: ['@event_dispatcher']
