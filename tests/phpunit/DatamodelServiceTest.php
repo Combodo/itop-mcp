@@ -52,6 +52,36 @@ class DatamodelServiceTest extends KernelTestCase
         $this->assertEquals('Person', $service->getClassFromOQL("SELECT Person AS P JOIN Organization AS O WHERE P.name='Foo'"));
     }
     
+    public function testGetClassSchemaFromXmlKnownClass(): void
+    {
+        $service = new DatamodelService(__DIR__.'/data/datamodel-production.xml', $this->cache, 'EN US');
+        $schema = $service->getClassSchemaFromXml('Person', __DIR__.'/data/datamodel-production.xml');
+        $this->assertArrayHasKey('email', $schema['fields']);
+    }
+
+    /**
+     * A className containing quotes must be treated as a plain value, never as XPath syntax.
+     */
+    #[DataProvider('classNameInjectionProvider')]
+    public function testGetClassSchemaFromXmlRejectsInjectedClassName(string $className): void
+    {
+        $service = new DatamodelService(__DIR__.'/data/datamodel-production.xml', $this->cache, 'EN US');
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessageMatches('/0 elements found/');
+        $service->getClassSchemaFromXml($className, __DIR__.'/data/datamodel-production.xml');
+    }
+
+    public static function classNameInjectionProvider(): array
+    {
+        return [
+            ["Person' or @id!='"],
+            ["x' or '1'='1"],
+            ['x" or "1"="1'],
+            ["x' or \"1\"=\"1"],
+        ];
+    }
+
     /**
      * @param string $oql
      */
