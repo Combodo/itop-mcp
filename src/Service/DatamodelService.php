@@ -89,7 +89,7 @@ class DatamodelService
         $document = new DOMDocument();
         $document->load($xmlFile);
         $this->xp = new DOMXPath($document);
-        $query = "/itop_design/classes/class[@id='$className']";
+        $query = "/itop_design/classes/class[@id=".$this->xpathString($className)."]";
         $nodes = $this->xp->query($query);
         if ($nodes->count() !== 1) {
             throw new \Exception("Class $className not found or ambiguous in the datamodel XML. ".$nodes->count()." elements found.");
@@ -101,7 +101,7 @@ class DatamodelService
             $schema = $this->getClassSchema($parent);
             $fields = $schema['fields'];
         }
-        $fieldNodes = $this->xp->query("/itop_design/classes/class[@id='$className']/fields/field");
+        $fieldNodes = $this->xp->query("/itop_design/classes/class[@id=".$this->xpathString($className)."]/fields/field");
         foreach($fieldNodes as $fieldNode) {
             $fieldInfo = [];
             $fieldInfo['code'] = $fieldNode->getAttribute('id'); 
@@ -126,6 +126,23 @@ class DatamodelService
         return ['fields' => $fields, 'workflow' => $workflow];
     }
     
+    /**
+     * Build an XPath 1.0 string literal for an arbitrary value, so that it can be
+     * safely embedded in a query (XPath 1.0 has no escape sequence for quotes).
+     */
+    protected function xpathString(string $value): string
+    {
+        if (strpos($value, "'") === false) {
+            return "'".$value."'";
+        }
+        if (strpos($value, '"') === false) {
+            return '"'.$value.'"';
+        }
+        // Contains both kinds of quotes: split on single quotes and join with concat()
+        $parts = array_map(fn(string $part) => "'".$part."'", explode("'", $value));
+        return 'concat('.implode(', "\'", ', $parts).')';
+    }
+
     protected function getChildContents(string $path, DOMNode $node): string
     {
         $nodes = $this->xp->query($path, $node);
@@ -174,7 +191,7 @@ class DatamodelService
     
     protected function getFlatZlist(string $className, string $listName): string
     {
-        $items = $this->xp->query("//classes/class[@id='".$className."']/presentation/$listName/items/item");
+        $items = $this->xp->query("//classes/class[@id=".$this->xpathString($className)."]/presentation/$listName/items/item");
         $zlist = [];
         foreach($items as $item) {
             $zlist[$item->getAttribute('id')] = $this->getChildContents('rank', $item);
@@ -186,7 +203,7 @@ class DatamodelService
     
     protected function getDictEntry($id): string
     {
-        $items = $this->xp->query("//dictionaries/dictionary[@id='".$this->language."']/entries/entry[@id='$id']");
+        $items = $this->xp->query("//dictionaries/dictionary[@id=".$this->xpathString($this->language)."]/entries/entry[@id=".$this->xpathString($id)."]");
         if ($items->count() === 0) {
             return '';
         }
@@ -195,17 +212,17 @@ class DatamodelService
     
     protected function getWorkflowfromXml(string $className): array
     {
-        $state_attr_nodes = $this->xp->query("//classes/class[@id='".$className."']/properties/fields_semantic/state_attribute");
+        $state_attr_nodes = $this->xp->query("//classes/class[@id=".$this->xpathString($className)."]/properties/fields_semantic/state_attribute");
         if ($state_attr_nodes->count() === 0) {
             return [];
         }
         $state_att_code = $state_attr_nodes->item(0)->textContent;
-        $stateNodes = $this->xp->query("//classes/class[@id='".$className."']/lifecycle/states/state");
+        $stateNodes = $this->xp->query("//classes/class[@id=".$this->xpathString($className)."]/lifecycle/states/state");
         $workflow = ['state_att_code' => $state_att_code, 'states' => [], 'transitions' => []];
         foreach($stateNodes as $node) {
             $stateValue = $node->getAttribute('id');
             $workflow['states'][] = $stateValue;
-            $targetStateNodes = $this->xp->query("//classes/class[@id='".$className."']/lifecycle/states/state[@id='".$stateValue."']/transitions/transition");
+            $targetStateNodes = $this->xp->query("//classes/class[@id=".$this->xpathString($className)."]/lifecycle/states/state[@id=".$this->xpathString($stateValue)."]/transitions/transition");
             foreach($targetStateNodes as $targetStateNode) {
                 $stimulus = $targetStateNode->getAttribute('id');
                 $targetState = $this->getChildContents('target', $targetStateNode);
